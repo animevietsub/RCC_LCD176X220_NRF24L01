@@ -45,6 +45,8 @@
         "queue.h": "c",
         "sr04m_lib.h": "c",
         "iterator": "c",
-        "nvs_flash.h": "c"
+        "nvs_flash.h": "c",
+        "mirf.h": "c",
+        "cstddef": "c"
     }
 }

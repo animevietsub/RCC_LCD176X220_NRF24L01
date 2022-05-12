@@ -22,40 +22,29 @@
 #include "soc/adc_channel.h"
 
 #define JOYSTICK_ADC_WIDTH ADC_WIDTH_BIT_12
-#define JOYSTICK_ADC_ATTEN ADC_ATTEN_DB_0
+#define JOYSTICK_ADC_ATTEN ADC_ATTEN_DB_11
 #define JOYSTICK_ADC_UNIT ADC_UNIT_1
-#define JOYSTICK_ADC_SAMPLES 32
+#define JOYSTICK_ADC_SAMPLES 256
+#define RAD_TO_DEGREE 57.3
 
 #define JOYSTICK_LX_ADC_CHANNEL ADC1_GPIO35_CHANNEL
 #define JOYSTICK_LY_ADC_CHANNEL ADC1_GPIO32_CHANNEL
 #define JOYSTICK_RX_ADC_CHANNEL ADC1_GPIO34_CHANNEL
 #define JOYSTICK_RY_ADC_CHANNEL ADC1_GPIO39_CHANNEL
 
-#define JOYSTICK_LB_PINOUT 
+#define JOYSTICK_LB_PINOUT
 
-typedef enum
+typedef struct
 {
-    WEATHER_SUNNY,
-    WEATHER_RAINY,
-    WEATHER_SUNSHOWER,
-} weather_status_t;
-
-typedef enum
-{
-    DUMMY = -1,
-    MENU_IDLE = 0,
-    MENU_MANUAL_AUTO,
-    MENU_LST,
-    MENU_RST,
-} menu_list_t;
-
-typedef enum
-{
-    ACTION_DRYING = 0,
-    ACTION_STORING,
-} my_action_t;
+    int16_t AL_DATA;
+    int16_t ML_DATA;
+    int16_t AR_DATA;
+    int16_t MR_DATA;
+} nrf24l01_data_t;
 
 void taskJoyCalibration(TFT_t *dev, FontxFile *fx);
-void taskGetADC(adc1_channel_t channel, uint16_t *val);
+void taskGetADC(adc1_channel_t channel, int16_t *val);
+void joyStickInit();
+void writeStructToByte(const void *object, size_t size, uint8_t *out_bytes);
 
 #endif

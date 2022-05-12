@@ -37,12 +37,12 @@
 #include "animation.h"
 
 #include "ili9225.h"
-#include "l298n_library.h"
-#include "adc_sensor_library.h"
 
 #include "port.h"
 #include "main.h"
 #include "fastmath.h"
+
+#include "mirf.h"
 
 #define DRIVER "ST7775"
 #define INTERVAL 500
@@ -52,34 +52,58 @@
 
 static const char *TAG_I2S = "[HC595_I2S]";
 static const char *TAG_SPIFFS = "[SPIFFS]";
+static const char *TAG_JOYSICK = "[JOYSICK]";
 
-static uint16_t joyl_left_value = 0;
-static uint16_t joyl_right_value = 0;
-static uint16_t joyl_up_value = 0;
-static uint16_t joyl_down_value = 0;
+static int16_t joyl_left_value = 0;
+static int16_t joyl_righ_value = 0;
+static int16_t joyl_up_value = 0;
+static int16_t joyl_down_value = 0;
 
-static uint16_t joyr_left_value = 0;
-static uint16_t joyr_right_value = 0;
-static uint16_t joyr_up_value = 0;
-static uint16_t joyr_down_value = 0;
+static int16_t joyr_left_value = 0;
+static int16_t joyr_righ_value = 0;
+static int16_t joyr_up_value = 0;
+static int16_t joyr_down_value = 0;
 
-static uint16_t joyl_x_value = 0;
-static uint16_t joyl_y_value = 0;
-static uint16_t joyl_cx_value = 0;
-static uint16_t joyl_cy_value = 0;
-static uint16_t joyl_angle = 0;
-static uint16_t joyl_mag = 0;
+static int16_t joyl_x_value = 0;
+static int16_t joyl_y_value = 0;
+static int16_t joyl_cx_value = 0;
+static int16_t joyl_cy_value = 0;
+static int16_t joyl_rxl_value = 1;
+static int16_t joyl_ryu_value = 1;
+static int16_t joyl_rxr_value = 1;
+static int16_t joyl_ryd_value = 1;
+static int16_t joyl_angle = 0;
+static int16_t joyl_mag = 0;
 
-static uint16_t joyr_x_value = 0;
-static uint16_t joyr_y_value = 0;
-static uint16_t joyr_cx_value = 0;
-static uint16_t joyr_cy_value = 0;
-static uint16_t joyr_angle = 0;
-static uint16_t joyr_mag = 0;
+static int16_t joyr_x_value = 0;
+static int16_t joyr_y_value = 0;
+static int16_t joyr_cx_value = 0;
+static int16_t joyr_cy_value = 0;
+static int16_t joyr_rxl_value = 1;
+static int16_t joyr_ryu_value = 1;
+static int16_t joyr_rxr_value = 1;
+static int16_t joyr_ryd_value = 1;
+static int16_t joyr_angle = 0;
+static int16_t joyr_mag = 0;
 
 nvs_handle_t nvs_handle_data;
-
 SemaphoreHandle_t xSemaphore1;
+nrf24l01_data_t nrf24l01_data = {
+    .AL_DATA = 0,
+    .ML_DATA = 0,
+    .AR_DATA = 0,
+    .MR_DATA = 0,
+};
+uint8_t *nrf24l01_data_bytes;
+
+void writeStructToByte(const void *object, size_t size, uint8_t *out_bytes)
+{
+    unsigned char *byte;
+    for (byte = object; size--; ++byte)
+    {
+        *out_bytes++ = *byte;
+    }
+}
 
 static void checkSPIFFS(char *path)
 {
@@ -183,25 +207,36 @@ static void taskLCDContoller()
         strcpy(file, "/spiffs/logo_gamo.jpg");
         JPEGLOGO(&dev, file, CONFIG_WIDTH, CONFIG_HEIGHT);
 
-        nvs_get_u16(nvs_handle_data, "joyl_left_value", &joyl_left_value);
-        nvs_get_u16(nvs_handle_data, "joyl_right_value", &joyl_right_value);
-        nvs_get_u16(nvs_handle_data, "joyl_up_value", &joyl_up_value);
-        nvs_get_u16(nvs_handle_data, "joyl_down_value", &joyl_down_value);
+        nvs_get_i16(nvs_handle_data, "joyl_left_value", &joyl_left_value);
+        nvs_get_i16(nvs_handle_data, "joyl_righ_value", &joyl_righ_value);
+        nvs_get_i16(nvs_handle_data, "joyl_up_value", &joyl_up_value);
+        nvs_get_i16(nvs_handle_data, "joyl_down_value", &joyl_down_value);
 
-        nvs_get_u16(nvs_handle_data, "joyr_left_value", &joyr_left_value);
-        nvs_get_u16(nvs_handle_data, "joyr_right_value", &joyr_right_value);
-        nvs_get_u16(nvs_handle_data, "joyr_up_value", &joyr_up_value);
-        nvs_get_u16(nvs_handle_data, "joyr_down_value", &joyr_down_value);
+        nvs_get_i16(nvs_handle_data, "joyr_left_value", &joyr_left_value);
+        nvs_get_i16(nvs_handle_data, "joyr_righ_value", &joyr_righ_value);
+        nvs_get_i16(nvs_handle_data, "joyr_up_value", &joyr_up_value);
+        nvs_get_i16(nvs_handle_data, "joyr_down_value", &joyr_down_value);
+
+        nvs_get_i16(nvs_handle_data, "joyl_cx_value", &joyl_cx_value);
+        nvs_get_i16(nvs_handle_data, "joyl_cy_value", &joyl_cy_value);
+        nvs_get_i16(nvs_handle_data, "joyr_cx_value", &joyr_cx_value);
+        nvs_get_i16(nvs_handle_data, "joyr_cy_value", &joyr_cy_value);
 
         WAIT;
         if (gpio_get_level(SWITCH_L_PIN) == false && gpio_get_level(SWITCH_R_PIN) == false)
         {
             taskJoyCalibration(&dev, fx16G);
         }
-        joyl_cx_value = (joyl_right_value - joyl_left_value) / 2;
-        joyl_cy_value = (joyl_down_value - joyl_up_value) / 2;
-        joyr_cx_value = (joyr_right_value - joyr_left_value) / 2;
-        joyr_cy_value = (joyr_down_value - joyr_up_value) / 2;
+
+        joyl_rxr_value = (joyl_righ_value - joyl_cx_value) / 100;
+        joyl_rxl_value = (joyl_cx_value - joyl_left_value) / 100;
+        joyl_ryd_value = (joyl_down_value - joyl_cy_value) / 100;
+        joyl_ryu_value = (joyl_cy_value - joyl_up_value) / 100;
+
+        joyr_rxr_value = (joyr_righ_value - joyr_cx_value) / 100;
+        joyr_rxl_value = (joyr_cx_value - joyr_left_value) / 100;
+        joyr_ryd_value = (joyr_down_value - joyr_cy_value) / 100;
+        joyr_ryu_value = (joyr_cy_value - joyr_up_value) / 100;
 
         strcpy(file, "/spiffs/background.jpg");
         JPEGLOGO(&dev, file, CONFIG_WIDTH, CONFIG_HEIGHT);
@@ -285,9 +320,9 @@ static void taskLCDContoller()
     vTaskDelete(NULL);
 }
 
-void taskGetADC(adc1_channel_t channel, uint16_t *val)
+void taskGetADC(adc1_channel_t channel, int16_t *val)
 {
-    uint32_t temp = 0;
+    int32_t temp = 0;
     for (int i = 0; i < JOYSTICK_ADC_SAMPLES; i++)
     {
         temp += adc1_get_raw(channel);
@@ -315,8 +350,6 @@ void taskJoyCalibration(TFT_t *dev, FontxFile *fx)
     }
     taskGetADC(JOYSTICK_LX_ADC_CHANNEL, &joyl_left_value);
     taskGetADC(JOYSTICK_RX_ADC_CHANNEL, &joyr_left_value);
-    nvs_set_u16(nvs_handle_data, "joyl_left_value", joyl_left_value);
-    nvs_set_u16(nvs_handle_data, "joyr_left_value", joyr_left_value);
 
     lcdFillScreen(dev, BLACK);
     strcpy(ascii, "RIGHT");
@@ -327,10 +360,8 @@ void taskJoyCalibration(TFT_t *dev, FontxFile *fx)
         setTextInCenter(dev, fx, ascii, -10, RED);
         vTaskDelay(pdMS_TO_TICKS(500));
     }
-    taskGetADC(JOYSTICK_LX_ADC_CHANNEL, &joyl_right_value);
-    taskGetADC(JOYSTICK_RX_ADC_CHANNEL, &joyr_right_value);
-    nvs_set_u16(nvs_handle_data, "joyl_right_value", joyl_right_value);
-    nvs_set_u16(nvs_handle_data, "joyr_right_value", joyr_right_value);
+    taskGetADC(JOYSTICK_LX_ADC_CHANNEL, &joyl_righ_value);
+    taskGetADC(JOYSTICK_RX_ADC_CHANNEL, &joyr_righ_value);
 
     lcdFillScreen(dev, BLACK);
     strcpy(ascii, "UP");
@@ -343,8 +374,6 @@ void taskJoyCalibration(TFT_t *dev, FontxFile *fx)
     }
     taskGetADC(JOYSTICK_LY_ADC_CHANNEL, &joyl_up_value);
     taskGetADC(JOYSTICK_RY_ADC_CHANNEL, &joyr_up_value);
-    nvs_set_u16(nvs_handle_data, "joyl_up_value", joyl_up_value);
-    nvs_set_u16(nvs_handle_data, "joyr_up_value", joyr_up_value);
 
     lcdFillScreen(dev, BLACK);
     strcpy(ascii, "DOWN");
@@ -357,10 +386,36 @@ void taskJoyCalibration(TFT_t *dev, FontxFile *fx)
     }
     taskGetADC(JOYSTICK_LY_ADC_CHANNEL, &joyl_down_value);
     taskGetADC(JOYSTICK_RY_ADC_CHANNEL, &joyr_down_value);
-    nvs_set_u16(nvs_handle_data, "joyl_down_value", joyl_down_value);
-    nvs_set_u16(nvs_handle_data, "joyr_down_value", joyr_down_value);
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    lcdFillScreen(dev, BLACK);
+    strcpy(ascii, "CENTER");
+    setTextInCenter(dev, fx, ascii, 10, YELLOW);
+    for (int8_t i = 5; i > 0; i--)
+    {
+        sprintf(ascii, "%d ...", i);
+        setTextInCenter(dev, fx, ascii, -10, RED);
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+    taskGetADC(JOYSTICK_LX_ADC_CHANNEL, &joyl_cx_value);
+    taskGetADC(JOYSTICK_LY_ADC_CHANNEL, &joyl_cy_value);
+    taskGetADC(JOYSTICK_RX_ADC_CHANNEL, &joyr_cx_value);
+    taskGetADC(JOYSTICK_RY_ADC_CHANNEL, &joyr_cy_value);
+
+    nvs_set_i16(nvs_handle_data, "joyl_righ_value", joyl_righ_value);
+    nvs_set_i16(nvs_handle_data, "joyr_righ_value", joyr_righ_value);
+    nvs_set_i16(nvs_handle_data, "joyl_left_value", joyl_left_value);
+    nvs_set_i16(nvs_handle_data, "joyr_left_value", joyr_left_value);
+    nvs_set_i16(nvs_handle_data, "joyl_down_value", joyl_down_value);
+    nvs_set_i16(nvs_handle_data, "joyr_down_value", joyr_down_value);
+    nvs_set_i16(nvs_handle_data, "joyl_up_value", joyl_up_value);
+    nvs_set_i16(nvs_handle_data, "joyr_up_value", joyr_up_value);
+
+    nvs_set_i16(nvs_handle_data, "joyl_cx_value", joyl_cx_value);
+    nvs_set_i16(nvs_handle_data, "joyl_cy_value", joyl_cy_value);
+    nvs_set_i16(nvs_handle_data, "joyr_cx_value", joyr_cx_value);
+    nvs_set_i16(nvs_handle_data, "joyr_cy_value", joyr_cy_value);
+
+    vTaskDelay(pdMS_TO_TICKS(500));
 }
 
 void joyStickInit()
@@ -383,19 +438,72 @@ void joyStickInit()
 
 static void taskJoyStickContoller()
 {
-    joyStickInit();
+    int16_t templ_x, templ_y, tempr_x, tempr_y;
+    int16_t joyl_rx_value = 1, joyl_ry_value = 1, joyr_rx_value = 1, joyr_ry_value = 1;
     while (1)
     {
-        taskGetADC(JOYSTICK_LX_ADC_CHANNEL, &joyl_x_value);
-        taskGetADC(JOYSTICK_LY_ADC_CHANNEL, &joyl_y_value);
-        taskGetADC(JOYSTICK_RX_ADC_CHANNEL, &joyr_x_value);
-        taskGetADC(JOYSTICK_RY_ADC_CHANNEL, &joyr_y_value);
+        taskGetADC(JOYSTICK_LX_ADC_CHANNEL, &templ_x);
+        taskGetADC(JOYSTICK_LY_ADC_CHANNEL, &templ_y);
+        taskGetADC(JOYSTICK_RX_ADC_CHANNEL, &tempr_x);
+        taskGetADC(JOYSTICK_RY_ADC_CHANNEL, &tempr_y);
 
-        joyl_angle = (uint16_t)atanf((joyl_cy_value - joyl_y_value) / (joyl_cx_value - joyl_x_value));
-        joyr_angle = (uint16_t)atanf((joyr_cy_value - joyr_y_value) / (joyr_cx_value - joyr_x_value));
-        joyl_mag = sqrtf((joyl_cy_value - joyl_y_value) * (joyl_cy_value - joyl_y_value) + (joyl_cx_value - joyl_x_value) * (joyl_cx_value - joyl_x_value));
-        joyr_mag = sqrtf((joyr_cy_value - joyr_y_value) * (joyr_cy_value - joyr_y_value) + (joyr_cx_value - joyl_x_value) * (joyr_cx_value - joyl_x_value));
+        if (joyl_cx_value - templ_x > 0)
+            joyl_rx_value = joyl_rxl_value;
+        else
+            joyl_rx_value = joyl_rxr_value;
+        if (joyl_cy_value - templ_y > 0)
+            joyl_ry_value = joyl_ryu_value;
+        else
+            joyl_ry_value = joyl_ryd_value;
+
+        if (joyr_cx_value - tempr_x > 0)
+            joyr_rx_value = joyr_rxl_value;
+        else
+            joyr_rx_value = joyr_rxr_value;
+        if (joyr_cy_value - tempr_y > 0)
+            joyr_ry_value = joyr_ryu_value;
+        else
+            joyr_ry_value = joyr_ryd_value;
+
+        joyl_x_value = -(joyl_cx_value - templ_x) / (joyl_rx_value);
+        joyl_y_value = (joyl_cy_value - templ_y) / (joyl_ry_value);
+        joyr_x_value = -(joyr_cx_value - tempr_x) / (joyr_rx_value);
+        joyr_y_value = (joyr_cy_value - tempr_y) / (joyr_ry_value);
+        joyl_mag = (int16_t)sqrtf(joyl_x_value * joyl_x_value + joyl_y_value * joyl_y_value);
+        if (joyl_cx_value - templ_x > 0)
+            joyl_angle = -(int16_t)(acosf((float)joyl_y_value / joyl_mag) * RAD_TO_DEGREE);
+        else
+            joyl_angle = (int16_t)(acosf((float)joyl_y_value / joyl_mag) * RAD_TO_DEGREE);
+        joyr_mag = (int16_t)sqrtf(joyr_x_value * joyr_x_value + joyr_y_value * joyr_y_value);
+        if (joyr_cx_value - tempr_x > 0)
+            joyr_angle = -(int16_t)(acosf((float)joyr_y_value / joyr_mag) * RAD_TO_DEGREE);
+        else
+            joyr_angle = (int16_t)(acosf((float)joyr_y_value / joyr_mag) * RAD_TO_DEGREE);
         vTaskDelay(pdMS_TO_TICKS(100));
+    }
+    vTaskDelete(NULL);
+}
+
+static void taskNRFTransmitter()
+{
+    NRF24_t dev;
+    Nrf24_init(&dev);
+    uint8_t payload = sizeof(nrf24l01_data_t);
+    uint8_t channel = 90;
+    Nrf24_config(&dev, channel, payload);
+    Nrf24_setTADDR(&dev, (uint8_t *)"FGHIJ");
+    Nrf24_SetSpeedDataRates(&dev, 1);
+    Nrf24_setRetransmitDelay(&dev, 0);
+    Nrf24_printDetails(&dev);
+    while (1)
+    {
+        nrf24l01_data.AL_DATA = joyl_angle;
+        nrf24l01_data.ML_DATA = joyl_mag;
+        nrf24l01_data.AR_DATA = joyr_angle;
+        nrf24l01_data.MR_DATA = joyr_mag;
+        writeStructToByte(&nrf24l01_data, sizeof(nrf24l01_data_t), nrf24l01_data_bytes);
+        Nrf24_send(&dev, nrf24l01_data_bytes);
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
     vTaskDelete(NULL);
 }
@@ -403,6 +511,7 @@ static void taskJoyStickContoller()
 void app_main(void)
 {
     xSemaphore1 = xSemaphoreCreateBinary();
+    nrf24l01_data_bytes = malloc(sizeof(nrf24l01_data_t));
     ESP_LOGI(TAG_SPIFFS, "Initializing SPIFFS");
     esp_vfs_spiffs_conf_t conf = {
         .base_path = "/spiffs",
@@ -443,8 +552,10 @@ void app_main(void)
     HC595_I2SInit();
     nvs_flash_init();
     nvs_open("storage", NVS_READWRITE, &nvs_handle_data);
+    joyStickInit();
     xTaskCreate(taskLCDContoller, "[taskLCDContoller]", 1024 * 6, NULL, 2, NULL);
     xTaskCreate(taskJoyStickContoller, "[taskJoyStickContoller]", 1024 * 6, NULL, 3, NULL);
+    xTaskCreate(taskNRFTransmitter, "[taskNRFTransmitter]", 1024 * 3, NULL, 2, NULL);
     // xTaskCreate(taskMotorController, "[taskMotorController]", 1024 * 3, NULL, 2, NULL);
     // xTaskCreate(taskADCSensor, "[taskADCSensor]", 1024 * 3, NULL, 2, NULL);
     // xTaskCreate(taskButton, "[taskButton]", 1024 * 3, NULL, 2, NULL);

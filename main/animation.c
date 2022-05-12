@@ -18,105 +18,105 @@
  */
 #include "animation.h"
 
-void setLX(TFT_t *dev, FontxFile *fx, uint16_t value)
+void setLX(TFT_t *dev, FontxFile *fx, int16_t value)
 {
     uint8_t buffer[FontxGlyphBufSize];
     uint8_t fontWidth;
     uint8_t fontHeight;
     GetFontx(fx, 0, buffer, &fontWidth, &fontHeight);
     lcdSetFontDirection(dev, 1);
-    char text[6];
+    char text[7];
     sprintf(text, "%d", value);
     lcdDrawFillRect(dev, 135, 48, 135 + fontHeight, 48 + fontWidth * 5, BLACK);
     lcdDrawString(dev, fx, 135, 48, text, GREEN);
 }
 
-void setLY(TFT_t *dev, FontxFile *fx, uint16_t value)
+void setLY(TFT_t *dev, FontxFile *fx, int16_t value)
 {
     uint8_t buffer[FontxGlyphBufSize];
     uint8_t fontWidth;
     uint8_t fontHeight;
     GetFontx(fx, 0, buffer, &fontWidth, &fontHeight);
     lcdSetFontDirection(dev, 1);
-    char text[6];
+    char text[7];
     sprintf(text, "%d", value);
     lcdDrawFillRect(dev, 118, 48, 118 + fontHeight, 48 + fontWidth * 5, BLACK);
     lcdDrawString(dev, fx, 118, 48, text, GREEN);
 }
 
-void setRX(TFT_t *dev, FontxFile *fx, uint16_t value)
+void setRX(TFT_t *dev, FontxFile *fx, int16_t value)
 {
     uint8_t buffer[FontxGlyphBufSize];
     uint8_t fontWidth;
     uint8_t fontHeight;
     GetFontx(fx, 0, buffer, &fontWidth, &fontHeight);
     lcdSetFontDirection(dev, 1);
-    char text[6];
+    char text[7];
     sprintf(text, "%d", value);
     lcdDrawFillRect(dev, 101, 48, 101 + fontHeight, 48 + fontWidth * 5, BLACK);
     lcdDrawString(dev, fx, 101, 48, text, CYAN);
 }
 
-void setRY(TFT_t *dev, FontxFile *fx, uint16_t value)
+void setRY(TFT_t *dev, FontxFile *fx, int16_t value)
 {
     uint8_t buffer[FontxGlyphBufSize];
     uint8_t fontWidth;
     uint8_t fontHeight;
     GetFontx(fx, 0, buffer, &fontWidth, &fontHeight);
     lcdSetFontDirection(dev, 1);
-    char text[6];
+    char text[7];
     sprintf(text, "%d", value);
     lcdDrawFillRect(dev, 84, 48, 84 + fontHeight, 48 + fontWidth * 5, BLACK);
     lcdDrawString(dev, fx, 84, 48, text, CYAN);
 }
 
-void setAL(TFT_t *dev, FontxFile *fx, uint16_t value)
+void setAL(TFT_t *dev, FontxFile *fx, int16_t value)
 {
     uint8_t buffer[FontxGlyphBufSize];
     uint8_t fontWidth;
     uint8_t fontHeight;
     GetFontx(fx, 0, buffer, &fontWidth, &fontHeight);
     lcdSetFontDirection(dev, 1);
-    char text[6];
+    char text[7];
     sprintf(text, "%d", value);
     lcdDrawFillRect(dev, 68, 48, 68 + fontHeight, 48 + fontWidth * 5, BLACK);
     lcdDrawString(dev, fx, 68, 48, text, RED);
 }
 
-void setML(TFT_t *dev, FontxFile *fx, uint16_t value)
+void setML(TFT_t *dev, FontxFile *fx, int16_t value)
 {
     uint8_t buffer[FontxGlyphBufSize];
     uint8_t fontWidth;
     uint8_t fontHeight;
     GetFontx(fx, 0, buffer, &fontWidth, &fontHeight);
     lcdSetFontDirection(dev, 1);
-    char text[6];
+    char text[7];
     sprintf(text, "%d", value);
     lcdDrawFillRect(dev, 51, 48, 51 + fontHeight, 48 + fontWidth * 5, BLACK);
     lcdDrawString(dev, fx, 51, 48, text, RED);
 }
 
-void setAR(TFT_t *dev, FontxFile *fx, uint16_t value)
+void setAR(TFT_t *dev, FontxFile *fx, int16_t value)
 {
     uint8_t buffer[FontxGlyphBufSize];
     uint8_t fontWidth;
     uint8_t fontHeight;
     GetFontx(fx, 0, buffer, &fontWidth, &fontHeight);
     lcdSetFontDirection(dev, 1);
-    char text[6];
+    char text[7];
     sprintf(text, "%d", value);
     lcdDrawFillRect(dev, 34, 48, 34 + fontHeight, 48 + fontWidth * 5, BLACK);
     lcdDrawString(dev, fx, 34, 48, text, 0xF999);
 }
 
-void setMR(TFT_t *dev, FontxFile *fx, uint16_t value)
+void setMR(TFT_t *dev, FontxFile *fx, int16_t value)
 {
     uint8_t buffer[FontxGlyphBufSize];
     uint8_t fontWidth;
     uint8_t fontHeight;
     GetFontx(fx, 0, buffer, &fontWidth, &fontHeight);
     lcdSetFontDirection(dev, 1);
-    char text[6];
+    char text[7];
     sprintf(text, "%d", value);
     lcdDrawFillRect(dev, 17, 48, 17 + fontHeight, 48 + fontWidth * 5, BLACK);
     lcdDrawString(dev, fx, 17, 48, text, 0xF999);

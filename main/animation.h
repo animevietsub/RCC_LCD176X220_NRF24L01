@@ -38,14 +38,14 @@
 
 #include "ili9225.h"
 
-void setLX(TFT_t *dev, FontxFile *fx, uint16_t value);
-void setLY(TFT_t *dev, FontxFile *fx, uint16_t value);
-void setRX(TFT_t *dev, FontxFile *fx, uint16_t value);
-void setRY(TFT_t *dev, FontxFile *fx, uint16_t value);
-void setAL(TFT_t *dev, FontxFile *fx, uint16_t value);
-void setML(TFT_t *dev, FontxFile *fx, uint16_t value);
-void setAR(TFT_t *dev, FontxFile *fx, uint16_t value);
-void setMR(TFT_t *dev, FontxFile *fx, uint16_t value);
+void setLX(TFT_t *dev, FontxFile *fx, int16_t value);
+void setLY(TFT_t *dev, FontxFile *fx, int16_t value);
+void setRX(TFT_t *dev, FontxFile *fx, int16_t value);
+void setRY(TFT_t *dev, FontxFile *fx, int16_t value);
+void setAL(TFT_t *dev, FontxFile *fx, int16_t value);
+void setML(TFT_t *dev, FontxFile *fx, int16_t value);
+void setAR(TFT_t *dev, FontxFile *fx, int16_t value);
+void setMR(TFT_t *dev, FontxFile *fx, int16_t value);
 
 void drawImage(TFT_t *dev, char *file, uint16_t offsetX, uint16_t offsetY, uint16_t width, uint16_t height);
 void setTextInCenter(TFT_t *dev, FontxFile *fx, char *text, int8_t offset, uint16_t color);
