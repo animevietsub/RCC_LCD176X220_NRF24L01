@@ -101,7 +101,8 @@ void writeStructToByte(const void *object, size_t size, uint8_t *out_bytes)
     unsigned char *byte;
     for (byte = object; size--; ++byte)
     {
-        *out_bytes++ = *byte;
+        *out_bytes = *byte;
+        out_bytes++;
     }
 }
 
